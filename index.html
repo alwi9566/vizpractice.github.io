@@ -233,7 +233,7 @@
                 const regionNames = [];
                 let regionIndex = 0;
 
-                // Build region map and names (only once, no duplicates)
+                // Build region map and names
                 happinessData.forEach(country => {
                 if (!regionMap[country.Region]) {
                     regionMap[country.Region] = regionIndex;
