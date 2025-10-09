@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts - Happiness Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            width: 90%;
+            height: 600px;
+            background-color: white;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 40px;
+        }
+        #status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px auto;
+            max-width: 600px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>World Happiness Report 2016</h1>
+    <div id="status">Loading data...</div>
+    
+    <!-- First Chart -->
+    <h2>GDP vs Happiness Score</h2>
+    <div id="chart1" class="chart-container"></div>
+
+    <!-- Second Chart -->
+    <h2>Top vs Bottom Happiness Metrics </h2>
+    <div id="chart2" class="chart-container"></div>
+
+    <!-- Third Chart -->
+    <h2>Parallel Coordinate Chart</h2>
+    <div id="chart3" class="chart-container"></div>
+
+
+    <!-- ECharts library -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- PapaParse for parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    
+    <script>
+        var myChart1 = echarts.init(document.getElementById('chart1'));
+        var myChart2 = echarts.init(document.getElementById('chart2'));
+        var myChart3 = echarts.init(document.getElementById('chart3'));
+
+        // Variable to store data
+        var happinessData = [];
+        
+        // Load and parse the CSV
+        Papa.parse('WHR_2016(1).csv', {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                happinessData = results.data;
+                
+                console.log('Data loaded');
+                console.log('Total countries:', happinessData.length);
+                console.log('First 5 rows:', happinessData.slice(0, 5));
+                
+                document.getElementById('status').innerHTML = 
+                    'Data loaded' + happinessData.length + ' countries found.';
+                document.getElementById('status').style.backgroundColor = '#e8f5e9';
+                document.getElementById('status').style.color = '#2e7d32';
+                
+                // Chart 1: Scatter Plot GDP vs Happiness 
+                var scatterData = happinessData.map(function(row) {
+                    return {
+                        value: [
+                            row['Economy (GDP per Capita)'],
+                            row['Happiness Score']
+                        ],
+                        name: row.Country
+                    };
+                });
+                
+                var option1 = {
+                    title: {
+                        text: 'GDP vs Happiness Score',
+                        left: 'center',
+                        top: 20
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            return params.data.name + '<br/>' +
+                                   'GDP: ' + params.data.value[0].toFixed(3) + '<br/>' +
+                                   'Happiness Score: ' + params.data.value[1].toFixed(3);
+                        }
+                    },
+                    xAxis: {
+                        name: 'Economy (GDP per Capita)',
+                        nameLocation: 'middle',
+                        nameGap: 30,
+                        type: 'value',
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        name: 'Happiness Score',
+                        nameLocation: 'middle',
+                        nameGap: 40,
+                        type: 'value',
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed'
+                            }
+                        }
+                    },
+                    series: [{
+                        name: 'Countries',
+                        type: 'scatter',
+                        symbolSize: 10,
+                        data: scatterData,
+                        itemStyle: {
+                            color: '#5470c6',
+                            opacity: 0.7
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                color: '#ee6666',
+                                opacity: 1
+                            }
+                        }
+                    }]
+                };
+                
+                myChart1.setOption(option1);
+                
+                // Chart 2: Radar chart
+                var topCountry = happinessData[0];  // Top Rank 
+                var bottomCountry = happinessData[happinessData.length - 1]; // Bottom Rank
+                var usCountry = happinessData.find(row => row.Country === 'United States');
+                
+                var option2 = {
+                    title: {
+                        text: 'Happiness Factors: Top and Bottom Countries vs United States',
+                        left: 'center',
+                        top: 20,
+                    },
+                    tooltip: {
+                        trigger: 'item'
+                    },
+                    legend: {
+                        data: [topCountry.Country, usCountry.Country, bottomCountry.Country],
+                        bottom: 20
+                    },
+                    radar: {
+                        indicator: [
+                        { name: 'Economy (GDP per Capita)', max: Math.max(...happinessData.map(row => row['Economy (GDP per Capita)'])) },
+                        { name: 'Family', max: Math.max(...happinessData.map(row => ['Family']))},
+                        { name: 'Health (Life Expectancy)', max: Math.max(...happinessData.map(row => ['Health (Life Expectancy)'])) },
+                        { name: 'Freedom', max: Math.max(...happinessData.map(row => ['Freedom']))},
+                        { name: 'Trust (Government Corruption)', max: Math.max(...happinessData.map(row => ['Trust (Government Corruption)']))},
+                        { name: 'Generosity', max: Math.max(...happinessData.map(row => ['Generosity']))}
+                        ]
+                    },
+                    series: [{
+                        type: 'radar',
+                        data: [
+                            {
+                                value: [
+                                    topCountry['Economy (GDP per Capita)'],
+                                    topCountry['Family'],
+                                    topCountry['Health (Life Expectancy)'],
+                                    topCountry['Freedom'],
+                                    topCountry['Trust (Government Corruption)'],
+                                    topCountry['Generosity']
+                                ],
+                                name: topCountry.Country,
+                                itemStyle: { color: '#5470c6' }
+                            },
+                            {
+                                value: [
+                                    bottomCountry['Economy (GDP per Capita)'],
+                                    bottomCountry['Family'],
+                                    bottomCountry['Health (Life Expectancy)'],
+                                    bottomCountry['Freedom'],
+                                    bottomCountry['Trust (Government Corruption)'],
+                                    bottomCountry['Generosity']
+                                ],
+                                name: bottomCountry.Country,
+                                itemStyle: { color: '#ee6666' }
+                            },
+                            {
+                                value: [
+                                    usCountry['Economy (GDP per Capita)'],
+                                    usCountry['Family'],
+                                    usCountry['Health (Life Expectancy)'],
+                                    usCountry['Freedom'],
+                                    usCountry['Trust (Government Corruption)'],
+                                    usCountry['Generosity']
+                                ],
+                                name: usCountry.Country,
+                                itemStyle: {color : '#008000'}
+                            }
+                        ]
+                    }]
+                };
+                myChart2.setOption(option2);
+
+
+                // Chart 3: parallel axis chart
+                // Initialize region tracking
+                const regionMap = {};
+                const regionNames = [];
+                let regionIndex = 0;
+
+                // Build region map and names (only once, no duplicates)
+                happinessData.forEach(country => {
+                if (!regionMap[country.Region]) {
+                    regionMap[country.Region] = regionIndex;
+                    regionNames.push(country.Region);
+                    regionIndex++;
+                }
+                });
+
+                // Prepare parallel data
+                const parallelData = happinessData.map(country => [
+                    country['Economy (GDP per Capita)'],
+                    country['Family'],
+                    country['Health (Life Expectancy)'],
+                    country['Freedom'],
+                    country['Trust (Government Corruption)'],
+                    country['Generosity'],
+                    country['Happiness Score'],
+                    regionMap[country.Region]
+                ]);
+
+                // Generate colors for each region
+                const regionColors = [];
+                const hStep = Math.round(300 / (regionNames.length - 1));
+                for (let i = 0; i < regionNames.length; i++) {
+                    regionColors.push(echarts.color.modifyHSL('#5A94DF', hStep * i));
+                }
+
+                // Create series for each region
+                const seriesData = regionNames.map((region, index) => ({
+                    name: region,
+                    type: 'parallel',
+                    lineStyle: {
+                        width: 1.5,
+                        opacity: 0.4
+                    },
+                    inactiveOpacity: 0.05,
+                    activeOpacity: 0.5,
+                    smooth: true,
+                    progressive: 500,
+                    data: parallelData.filter((_, i) => regionMap[happinessData[i].Region] === index),
+                    itemStyle: {
+                        color: regionColors[index]
+                    }
+                }));
+
+                // Build the chart
+                option3 = {
+                    backgroundColor: '#333',
+                    tooltip: {
+                        padding: 10,
+                        backgroundColor: '#222',
+                        borderColor: '#777',
+                        borderWidth: 1
+                    },
+                    title: {
+                        text: 'World Happiness Report by Region',
+                        left: 'center',
+                        top: 0,
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    legend: {
+                        data: regionNames,
+                        orient: 'vertical',
+                        left: 20,
+                        top: 100,
+                        textStyle: {
+                            color: '#fff'
+                        },
+                        itemWidth: 10,
+                        itemHeight: 10
+                    },
+                    parallelAxis: [
+                        { dim: 0, name: 'Economy (GDP per Capita)', nameLocation: 'end' },
+                        { dim: 1, name: 'Family', nameLocation: 'end' },
+                        { dim: 2, name: 'Health (Life Expectancy)', nameLocation: 'end' },
+                        { dim: 3, name: 'Freedom', nameLocation: 'end' },
+                        { dim: 4, name: 'Trust (Gov Corruption)', nameLocation: 'end' },
+                        { dim: 5, name: 'Generosity', nameLocation: 'end' },
+                        { dim: 6, name: 'Happiness Score', nameLocation: 'end' }
+                    ],
+                    parallel: {
+                        left: '25%',
+                        right: '15%',
+                        bottom: '10%',
+                        top: '80',
+                        layout: 'vertical',
+                        parallelAxisDefault: {
+                            type: 'value',
+                            nameLocation: 'end',
+                            nameGap: 20,
+                            nameTextStyle: {
+                                color: '#fff',
+                                fontSize: 14
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                color: '#aaa'
+                                }
+                            },
+                            axisTick: {
+                                lineStyle: {
+                                color: '#777'
+                                }
+                            },
+                            splitLine: {
+                                show:false
+                            },
+                            axisLabel: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    animation: false,
+                    series: seriesData
+                };
+                myChart3.setOption(option3);
+            },
+
+
+            error: function(error) {
+                console.error('Error loading CSV:', error);
+                document.getElementById('status').innerHTML = 
+                    '✗ Error loading data. Make sure WHR_2016(1).csv is in the same folder as this HTML file.';
+                document.getElementById('status').style.backgroundColor = '#ffebee';
+                document.getElementById('status').style.color = '#c62828';
+            }
+        });
+        
+        // Make all charts responsive
+        window.addEventListener('resize', function() {
+            myChart1.resize();
+            myChart2.resize();
+            myChart3.resize();
+        });
+    </script>
+</body>
+</html>
