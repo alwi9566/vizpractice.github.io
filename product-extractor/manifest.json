@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Product Data Extractor",
+  "version": "2.0",
+  "description": "Extracts product data from Craigslist, eBay, and Facebook Marketplace",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Extract Product Data"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
