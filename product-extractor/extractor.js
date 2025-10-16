@@ -1,3 +1,5 @@
+const workerPath = chrome.runtime.getURL('worker.min.js');
+
 const EXTRACTION_PROFILES = {
   "Craigslist": {
     "blacklistKeywords": "craigslist,posted",
@@ -88,28 +90,39 @@ async function extractProductData(screenshotDataURL, profile) {
                 canvas.height = img.height;
                 canvas.getContext('2d').drawImage(img, 0, 0);
                 
+                // CREATE WORKER ONCE at the beginning
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    workerPath: workerPath
+                });
+                
                 // Extract title
                 let title = 'Not found';
                 if (profile.titleStrategy === 'region') {
                     const titleCanvas = cropRegion(canvas, profile.titleYStart, profile.titleYEnd, profile.titleXStart, profile.titleXEnd);
-                    const titleResult = await Tesseract.recognize(titleCanvas, 'eng');
+                    // CHANGED: Use worker.recognize instead of Tesseract.recognize
+                    const titleResult = await worker.recognize(titleCanvas);
                     title = extractTitleText(titleResult.data.text, profile);
                 }
                 
                 // Extract price from full page
-                const fullResult = await Tesseract.recognize(canvas, 'eng');
+                // CHANGED: Use worker.recognize instead of Tesseract.recognize
+                const fullResult = await worker.recognize(canvas);
                 const price = extractPrice(fullResult.data.text);
                 
                 // Extract description
                 let description = 'Not found';
                 if (profile.descStrategy === 'region') {
                     const descCanvas = cropRegion(canvas, profile.descYStart, profile.descYEnd, profile.descXStart, profile.descXEnd);
-                    const descResult = await Tesseract.recognize(descCanvas, 'eng');
+                    // CHANGED: Use worker.recognize instead of Tesseract.recognize
+                    const descResult = await worker.recognize(descCanvas);
                     description = extractDescText(descResult.data.text, profile, title);
                 }
                 
                 // Extract image
                 const photoCanvas = cropRegion(canvas, profile.imageYStart, profile.imageYEnd, profile.imageXStart, profile.imageXEnd);
+                
+                // TERMINATE WORKER at the end
+                await worker.terminate();
                 
                 resolve({
                     title,

@@ -1,3 +1,5 @@
+console.log('Tesseract available?', typeof Tesseract);
+
 document.addEventListener('DOMContentLoaded', async function() {
     const loadingDiv = document.getElementById('loading');
     const resultsDiv = document.getElementById('results');

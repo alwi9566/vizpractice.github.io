@@ -8,6 +8,10 @@
     "storage",
     "tabs"
   ],
+  "host_permissions": [
+    "https://cdn.jsdelivr.net/*",
+    "https://tessdata.projectnaptha.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Extract Product Data"
@@ -20,5 +24,9 @@
   ],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "web_accessible_resources": [{
+    "resources": ["worker.min.js", "tesseract.min.js"],
+    "matches": ["<all_urls>"]
+  }]
 }
